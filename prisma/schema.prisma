@@ -16,6 +16,7 @@ datasource db {
 model Geki {
   id         String       @id @default(uuid())
   song       String
+  criteria   Json
   deadline   DateTime
   status     GekiStatus
   Contestant Contestant[]
@@ -29,12 +30,24 @@ model User {
   name        String
   displayName String
   role        UserRole     @default(USER)
-  elo         Int
   createdAt   DateTime     @default(now()) @map(name: "created_at")
   updatedAt   DateTime     @updatedAt @map(name: "updated_at")
   Contestant  Contestant[]
+  GekiScore   GekiScore[]
+  UserRecord  UserRecord?
 
-  @@map(name: "users")
+  @@map(name: "user")
+}
+
+model UserRecord {
+  id     String @id
+  userId String @unique
+  elo    Int
+  wins   Int    @default(0)
+  losses Int    @default(0)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map(name: "user_record")
 }
 
 model Contestant {
@@ -45,6 +58,15 @@ model Contestant {
   geki         Geki   @relation(fields: [gekiId], references: [id])
 
   @@map(name: "contestant")
+}
+
+model GekiScore {
+  id      String @id @default(uuid())
+  score   Json // same as criteria
+  judgeId String
+  judge   User   @relation(fields: [judgeId], references: [id])
+
+  @@map(name: "geki_score")
 }
 
 enum UserRole {
