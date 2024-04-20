@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Geki {
+  id         String       @id @default(uuid())
+  song       String
+  deadline   DateTime
+  status     GekiStatus
+  Contestant Contestant[]
+
+  @@map(name: "geki")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  name        String
+  displayName String
+  role        UserRole     @default(USER)
+  elo         Int
+  createdAt   DateTime     @default(now()) @map(name: "created_at")
+  updatedAt   DateTime     @updatedAt @map(name: "updated_at")
+  Contestant  Contestant[]
+
+  @@map(name: "users")
+}
+
+model Contestant {
+  id           String @id @default(uuid())
+  contestantId String
+  contestant   User   @relation(fields: [contestantId], references: [id])
+  gekiId       String
+  geki         Geki   @relation(fields: [gekiId], references: [id])
+
+  @@map(name: "contestant")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum GekiStatus {
+  SUBMITTED
+  JUDGING
+  COMPLETE
+  CANCELED
+}
