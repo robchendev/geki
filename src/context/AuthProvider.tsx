@@ -3,12 +3,14 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseFrontendClient } from "@/lib/supabaseFrontendClient";
+import { Session } from "@supabase/supabase-js";
 
 export interface AuthContextType {
-  user: User | null;
+  session: Session | null;
   handleSignUp: (email: string, password: string) => Promise<void>;
   handleSignIn: (email: string, password: string) => Promise<void>;
-  handleSignOut: (email: string, password: string) => Promise<void>;
+  handleSignOut: () => Promise<void>;
+  handleSignInDiscord: () => Promise<void>;
 }
 
 export interface User {
@@ -31,28 +33,19 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
-  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const router = useRouter();
   const supabase = createSupabaseFrontendClient();
 
+  // Sets user accordingly, whenever supabase.auth changes through the handle functions below
   useEffect(() => {
     async function checkSession() {
       const { data, error } = await supabase.auth.getSession();
-
+      console.log(data);
       if (error) {
         console.error("Error getting session:", error);
-        setUser(null);
+        setSession(null);
         return;
-      }
-
-      if (data.session && data.session.user) {
-        const { id, email } = data.session.user;
-        setUser({
-          id: id,
-          email: email || "",
-        });
-      } else {
-        setUser(null);
       }
     }
 
@@ -60,12 +53,9 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session && session.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || "",
-        });
+        setSession(session);
       } else {
-        setUser(null);
+        setSession(null);
       }
     });
 
@@ -74,8 +64,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     };
   }, [supabase.auth]);
 
+  // * Email
+
   const handleSignUp = async (email: string, password: string): Promise<void> => {
-    await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -83,25 +75,35 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   };
 
   const handleSignIn = async (email: string, password: string): Promise<void> => {
-    await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     router.refresh();
   };
 
-  const handleSignOut = async (email: string, password: string): Promise<void> => {
-    await supabase.auth.signOut();
+  const handleSignOut = async (): Promise<void> => {
+    const { error } = await supabase.auth.signOut();
+    setSession(null);
     router.refresh();
   };
+
+  // * OAuth
+
+  async function handleSignInDiscord() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "discord",
+    });
+  }
 
   return (
     <AuthContext.Provider
       value={{
-        user,
+        session,
         handleSignUp,
         handleSignIn,
         handleSignOut,
+        handleSignInDiscord,
       }}
     >
       {children}

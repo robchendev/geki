@@ -6,9 +6,8 @@ import { useAuth } from "@/context/AuthProvider";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { user, handleSignUp, handleSignIn, handleSignOut } = useAuth();
-
-  // TODO: Setup checks for user state to see if logged in or not
+  const { session, handleSignUp, handleSignIn, handleSignOut, handleSignInDiscord } = useAuth();
+  console.log(session);
   return (
     <>
       <input
@@ -25,10 +24,17 @@ export default function Login() {
         value={password}
         placeholder="Password"
       />
-      <div>user logged in?: {!!user ? "Yes" : "No"}</div>
-      <button onClick={() => handleSignUp(email, password)}>Sign up</button>
-      <button onClick={() => handleSignIn(email, password)}>Sign in</button>
-      <button onClick={() => handleSignOut(email, password)}>Sign out</button>
+      {session && (
+        <div>
+          id: {session.user.id}, email: {session.user.email}, which:{" "}
+          {session.user.app_metadata.provider}
+        </div>
+      )}
+      <div>user logged in?: {!!session ? "Yes" : "No"}</div>
+      <button onClick={() => handleSignUp(email, password)}>SignUp</button>
+      <button onClick={() => handleSignIn(email, password)}>SignIn</button>
+      <button onClick={() => handleSignInDiscord()}>SignInDiscord</button>
+      <button onClick={() => handleSignOut()}>SignOut</button>
     </>
   );
 }
