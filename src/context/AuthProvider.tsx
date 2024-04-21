@@ -1,16 +1,14 @@
+"use client";
+
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { createSupabaseFrontendClient } from "@/lib/supabaseFrontendClient";
 
 export interface AuthContextType {
-  email: string;
-  setEmail: (email: string) => void;
-  password: string;
-  setPassword: (password: string) => void;
   user: User | null;
-  handleSignUp: () => Promise<void>;
-  handleSignIn: () => Promise<void>;
-  handleSignOut: () => Promise<void>;
+  handleSignUp: (email: string, password: string) => Promise<void>;
+  handleSignIn: (email: string, password: string) => Promise<void>;
+  handleSignOut: (email: string, password: string) => Promise<void>;
 }
 
 export interface User {
@@ -33,8 +31,6 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const supabase = createSupabaseFrontendClient();
@@ -78,34 +74,30 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     };
   }, [supabase.auth]);
 
-  const handleSignUp = async (): Promise<void> => {
+  const handleSignUp = async (email: string, password: string): Promise<void> => {
     await supabase.auth.signUp({
       email,
       password,
     });
-    router.reload();
+    router.refresh();
   };
 
-  const handleSignIn = async (): Promise<void> => {
+  const handleSignIn = async (email: string, password: string): Promise<void> => {
     await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    router.reload();
+    router.refresh();
   };
 
-  const handleSignOut = async (): Promise<void> => {
+  const handleSignOut = async (email: string, password: string): Promise<void> => {
     await supabase.auth.signOut();
-    router.reload();
+    router.refresh();
   };
 
   return (
     <AuthContext.Provider
       value={{
-        email,
-        setEmail,
-        password,
-        setPassword,
         user,
         handleSignUp,
         handleSignIn,
